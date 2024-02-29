@@ -1,6 +1,7 @@
 package unidad4.model;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -30,6 +31,32 @@ public class ModelCliente {
 	}
 
 	/**
+	 * Recibe la conexión un idCliente y devuelve un ResultSet con los datos de ese
+	 * ID
+	 * 
+	 * @param con
+	 * @param idCliente
+	 * @return
+	 */
+	public static ResultSet getCliente(Connection con, int idCliente) {
+		try {
+			// Creamos la sentencia a ejecutar
+			String query = "SELECT * FROM CLIENTE WHERE idCliente=?";
+			// 1º - Creamos un Prepared Statement
+			PreparedStatement pstmt = con.prepareStatement(query);
+			// 2º - Seleccionamos el valor a la ?
+			pstmt.setInt(1, idCliente);
+			// 3º - Ejecutamos la query y los resultados quedan en el resultSet
+			ResultSet rs = pstmt.executeQuery();
+			return rs;
+		} catch (SQLException e) {
+			e.printStackTrace();
+			return null;
+		}
+
+	}
+
+	/**
 	 * Borramos el cliente recibiendo su ID
 	 * 
 	 * @param con
@@ -38,10 +65,17 @@ public class ModelCliente {
 	 */
 	public static int removeCliente(Connection con, int idCliente) throws SQLException {
 		try {
-			// Creamos un statement
-			Statement stmt = con.createStatement();
+			// Creamos una query
+			String query = "DELETE FROM CLIENTE WHERE idCliente=?";
+
+			// Creamos el preparedStatement
+			PreparedStatement pstmt = con.prepareStatement(query);
+			// Asignamos el valor a la ?
+			pstmt.setInt(1, idCliente);
+
 			// Borrado
-			int numAff = stmt.executeUpdate("DELETE FROM CLIENTE WHERE idCliente=" + idCliente);
+			int numAff = pstmt.executeUpdate();
+
 			// Devolvemos el numero de columnas afectadas
 			return numAff;
 		} catch (SQLException e) {
@@ -60,10 +94,17 @@ public class ModelCliente {
 	 */
 	public static int removeCliente(Connection con, String email) {
 		try {
-			// Creamos un statement
-			Statement stmt = con.createStatement();
-			// Borrado
-			int numAff = stmt.executeUpdate("DELETE FROM CLIENTE WHERE email=" + email);
+			// Creamos una query
+			String query = "DELETE FROM CLIENTE WHERE email=?";
+
+			// Creamos un PreparedStatement
+			PreparedStatement pstmt = con.prepareStatement(query);
+			// Asignamos el email en la ?
+			pstmt.setString(1, email);
+
+			// Guardamos el número de filas afectadas por el borrado
+			int numAff = pstmt.executeUpdate();
+
 			// Devolvemos el número de columnas afectadas
 			return numAff;
 		} catch (SQLException e) {
@@ -85,21 +126,22 @@ public class ModelCliente {
 		try {
 			int numAff = ERROR_SQL;
 
-			String query = "INSERT INTO cliente (nombre, apellidos, edad, sexo, email,password) VALUES('"
-					+ cliente.getNombre();
-			query += "','" + cliente.getApellidos();
-			query += "'," + cliente.getEdad();
-			query += ",'" + cliente.getSexo();
-			query += "','" + cliente.getEmail();
-			query += "','" + cliente.getPassword() + "')";
+			String query = "INSERT INTO cliente (nombre, apellidos, edad, sexo, email,password) VALUES(?, ?, ?, ?, ?, ?)";
 
 			// "1, 'Alan Bowers', 'Kylie Mcleod', 61, 'F', 'enim.mi.tempor@icloud.com',
 			// 'OFO38CRF5IB')";
-			// Creamos un statement
-			Statement stmt = con.createStatement();
+			// Creamos un PreparedStatement
+			PreparedStatement pstmt = con.prepareStatement(query);
+			// Asignamos los valores a los ?
+			pstmt.setString(1, cliente.getNombre());
+			pstmt.setString(2, cliente.getApellidos());
+			pstmt.setInt(3, cliente.getEdad());
+			pstmt.setString(4, String.valueOf(cliente.getSexo()));
+			pstmt.setString(5, cliente.getEmail());
+			pstmt.setString(6, cliente.getPassword());
 
-			// Ejecutamos la query
-			numAff = stmt.executeUpdate(query);
+			// Guardamos el número de filas afectadas al ejecutar la query
+			numAff = pstmt.executeUpdate(query);
 
 			// Devolvemos el numero de columnas afectadas
 			return numAff;
@@ -122,54 +164,85 @@ public class ModelCliente {
 		try {
 			boolean campoPrevio = false;
 			int numAff = ERROR_SQL;
-			Statement stmt = con.createStatement();
 			String query = "UPDATE CLIENTE SET ";
 
 			// Si los campos no son nulos, los vamos añadiendo a la sentencia
 			if (cliente.getNombre() != null) {
-				query += "NOMBRE = '" + cliente.getNombre() + "'";
+				query += "NOMBRE = ?";
 				campoPrevio = true;
 			}
 			if (cliente.getApellidos() != null) {
 				if (campoPrevio) {
 					query += ", ";
 				}
-				query += "APELLIDOS = '" + cliente.getApellidos() + "'";
+				query += "APELLIDOS = ?";
 				campoPrevio = true;
 			}
 			if (cliente.getEdad() != -1) {
 				if (campoPrevio) {
 					query += ", ";
 				}
-				query += "EDAD = " + cliente.getEdad();
+				query += "EDAD = ?";
 				campoPrevio = true;
 			}
 			if (cliente.getSexo() != ' ') {
 				if (campoPrevio) {
 					query += ", ";
 				}
-				query += "SEXO = '" + cliente.getSexo() + "'";
+				query += "SEXO = ?";
 				campoPrevio = true;
 			}
 			if (cliente.getEmail() != null) {
 				if (campoPrevio) {
 					query += ", ";
 				}
-				query += "EMAIL = '" + cliente.getEmail() + "'";
+				query += "EMAIL = ?";
 				campoPrevio = true;
 			}
 			if (cliente.getPassword() != null) {
 				if (campoPrevio) {
 					query += ", ";
 				}
-				query += "PASSWORD = '" + cliente.getPassword() + "'";
+				query += "PASSWORD = ?";
 				campoPrevio = true;
 			}
 
-			query += " WHERE idCliente = " + cliente.getIdCliente();
+			query += " WHERE idCliente = ?";
+			PreparedStatement pstmt = con.prepareStatement(query);
+
+			// Enlazamos los datos a las ? del preparedStatement
+			int posInterrogacion = 1;
+
+			if (cliente.getNombre() != null) {
+				pstmt.setString(posInterrogacion, cliente.getNombre());
+				posInterrogacion++;
+			}
+			if (cliente.getApellidos() != null) {
+				pstmt.setString(posInterrogacion, cliente.getApellidos());
+				posInterrogacion++;
+			}
+			if (cliente.getEdad() != -1) {
+				pstmt.setInt(posInterrogacion, cliente.getEdad());
+				posInterrogacion++;
+			}
+			if (cliente.getSexo() != ' ') {
+				pstmt.setString(posInterrogacion, String.valueOf(cliente.getSexo()));
+				posInterrogacion++;
+			}
+			if (cliente.getEmail() != null) {
+				pstmt.setString(posInterrogacion, cliente.getEmail());
+				posInterrogacion++;
+			}
+			if (cliente.getPassword() != null) {
+				pstmt.setString(posInterrogacion, cliente.getPassword());
+				posInterrogacion++;
+			}
+
+			pstmt.setInt(posInterrogacion, cliente.getIdCliente());
 
 			if (campoPrevio) {
-				numAff = stmt.executeUpdate(query);
+				System.out.println(query);
+				numAff = pstmt.executeUpdate();
 			}
 
 			return numAff;
